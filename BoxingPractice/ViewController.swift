@@ -36,12 +36,17 @@ class ViewController: UIViewController {
 //    private var isSelected = false
     
     // Boxing
-    private var isSelected = Box(false)
-    private var isChanged = Box(false)
+//    private var isSelected = Box(false)
+//    private var isChanged = Box(false)
 //    var box = Box(3)
 //    var boxbox = Box("string")
     
 //    private let boxedInt = Box(123)
+    
+    // PropertyWrapper Boxed
+    @Boxed private var isSelected: Bool = false
+    @Boxed private var isChanged: Bool = false
+
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -52,8 +57,15 @@ class ViewController: UIViewController {
 //            self.bindingBtn.setTitle("\(self.boxedInt.value)", for: .normal)
 //        }
 //        boxedInt.value = 456
+        
+//        var testBox = Box(false)
+//        testBox.bind { bool in
+//            print(bool)
+//        }
+//        testBox.value = true
+        
     
-        isSelected.bind { isSelected in
+        _isSelected.bind { isSelected in
             if isSelected {
                 self.bindingBtn.setTitle("選中", for: .normal)
             } else {
@@ -61,7 +73,7 @@ class ViewController: UIViewController {
             }
         }
 
-        isSelected.bind { selected in
+        $isSelected.bind { selected in
             if selected {
                 self.anotherBindingBtn.setImage(UIImage(systemName: "plus"), for: .normal)
             } else {
@@ -69,7 +81,7 @@ class ViewController: UIViewController {
             }
         }
         
-//        isChanged.bind { changed in
+//        $isChanged.bind { changed in
 //            if changed {
 //                self.bindingBtn.setImage(UIImage(systemName: "plus"), for: .normal)
 //            } else {
@@ -122,7 +134,8 @@ class ViewController: UIViewController {
 //    }
 
     @IBAction func bindingBtnTapped(_ sender: UIButton) {
-        isSelected.value.toggle()
+//        isSelected.value.toggle()
+        isSelected.toggle()
         
         // KVC、KVO
 //        let currentSelectedValue = value(forKey: "isSelected") as? Bool ?? false
@@ -134,7 +147,8 @@ class ViewController: UIViewController {
     }
     
     @IBAction func anotherBindingBtnTapped(_ sender: UIButton) {
-        isChanged.value.toggle()
+//        isChanged.value.toggle()
+        isChanged.toggle()
 //        boxedInt.value = 456
     }
     
@@ -146,34 +160,131 @@ class ViewController: UIViewController {
     
 }
 
-final class Box<T> {
+
+@propertyWrapper
+class Boxed<T> {
     typealias Listener = (T) -> Void
-    
-//    private(set) var listener: Listener?
-    var listener: Listener?         // Single Binding
-//    var listeners: [Listener] = []  // Multi Binding
-    
-    var value: T {
+
+    private var listeners: [Listener] = []
+
+    var wrappedValue: T {
         didSet {
-            // Multi Binding
-//            listeners.forEach({ listener in
-//                listener(value)
-//            })
-            // Single Binding
-            listener?(value)
+            listeners.forEach { listener in
+                listener(wrappedValue)
+            }
         }
     }
 
-    init(_ value: T) {
-        self.value = value
+    init(wrappedValue: T) {
+        self.wrappedValue = wrappedValue
     }
-    
+
+    var projectedValue: Boxed<T> {
+        return self
+    }
+
     func bind(_ listener: @escaping Listener) {
-        self.listener = listener            // Single Binding
-//        self.listeners.append(listener)     // Multi Binding
-        listener(value)
+        self.listeners.append(listener)
+        listener(wrappedValue)
     }
 }
+
+//@propertyWrapper
+//struct Boxed<T> {
+//    typealias Listener = (T) -> Void
+//
+//    private var value: T {
+//        didSet {
+//            // Notify all listeners
+//            listeners.forEach({ listener in
+//                listener(value)
+//            })
+//        }
+//    }
+//
+//    private var listeners: [Listener] = []
+//
+//    var wrappedValue: T {
+//        get {
+//            return value
+//        }
+//        set {
+//            value = newValue
+//        }
+//    }
+//
+//    var projectedValue: Boxed<T> {
+//        return self
+//    }
+//
+//    init(wrappedValue: T) {
+//        self.value = wrappedValue
+//    }
+//
+//    mutating func bind(_ listener: @escaping Listener) {
+//            self.listeners.append(listener)
+//            listener(value)
+//    }
+//}
+
+//@propertyWrapper
+//struct Boxed<T> {
+//    typealias Listener = (T) -> Void
+//
+//    private var box: Box<T>
+//
+//    var wrappedValue: T {
+//        get {
+//            return box.value
+//        }
+//        set {
+//            box.value = newValue
+//        }
+//    }
+//
+//    var projetedValue: Boxed<T> {
+//        return self
+//    }
+//
+//    init(wrappedValue: T) {
+//        self.box = Box(wrappedValue)
+//    }
+//
+//    func bind(_ listener: @escaping Listener) {
+//        box.bind(listener)
+//    }
+//}
+
+
+//final class Box<T> {
+//    typealias Listener = (T) -> Void
+//
+////    private(set) var listener: Listener?
+////    var listener: Listener?         // Single Binding
+//    var listeners: [Listener] = []  // Multi Binding
+//
+//    var value: T {
+//        didSet {
+//            // Multi Binding
+//            listeners.forEach({ listener in
+//                listener(value)
+//            })
+//            // Single Binding
+////            listener?(value)
+//        }
+//    }
+//
+//    init(_ value: T) {
+//        self.value = value
+//    }
+//
+//    func bind(_ listener: @escaping Listener) {
+////        self.listener = listener            // Single Binding
+//        self.listeners.append(listener)     // Multi Binding
+//        listener(value)
+//    }
+//}
+
 
 //class BoxBox<T> {
 //    var value: T {
